@@ -18,18 +18,10 @@ class conexion {
             $stmt->execute();
             $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if (count($resultados) > 0) {
-                foreach ($resultados as $fila) {
-                    foreach ($fila as $columna => $valor) {
-                        echo htmlspecialchars($columna) . ": " . htmlspecialchars($valor) . " | ";
-                    }
-                    echo "<br>";
-                }
-            } else {
-                echo "No se encontraron registros en la tabla " . htmlspecialchars($tabla);
-            }
+            return $resultados;
         } catch (PDOException $e) {
-            echo "Error al realizar la consulta: " . htmlspecialchars($e->getMessage());
+            echo "<p>Error al realizar la consulta: " . htmlspecialchars($e->getMessage()) . "</p>";
+            return [];
         }
     }
 }
@@ -39,14 +31,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($tabla) {
         $con = new conexion();
-        if ($con->getConexion() != null) {
-            echo "<h1>Resultados de la Tabla: " . htmlspecialchars($tabla) . "</h1>";
-            $con->listarDatos($tabla);
+        $datos = $con->listarDatos($tabla);
+
+        // Comienza a generar el HTML
+        echo "<!DOCTYPE html>
+        <html lang='es'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Resultados de la Consulta</title>
+        </head>
+        <body>
+            <h1>Resultados de la Tabla: " . htmlspecialchars($tabla) . "</h1>";
+
+        if (!empty($datos)) {
+            echo "<table border='1'>
+                    <tr>";
+
+            // Encabezados de la tabla
+            foreach ($datos[0] as $columna => $valor) {
+                echo "<th>" . htmlspecialchars($columna) . "</th>";
+            }
+            echo "</tr>";
+
+            // Filas de la tabla
+            foreach ($datos as $fila) {
+                echo "<tr>";
+                foreach ($fila as $valor) {
+                    echo "<td>" . htmlspecialchars($valor) . "</td>";
+                }
+                echo "</tr>";
+            }
+            echo "</table>";
         } else {
-            echo "Error al conectarse a la base de datos";
+            echo "<p>No se encontraron registros en la tabla " . htmlspecialchars($tabla) . "</p>";
         }
+
+        echo "</body>
+        </html>";
     } else {
-        echo "Nombre de tabla no válido.";
+        echo "<p>Nombre de tabla no válido.</p>";
     }
 }
 ?>
